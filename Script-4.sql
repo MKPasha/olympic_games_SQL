@@ -114,9 +114,24 @@ FROM country_stats
 GROUP BY YEAR
 ORDER BY YEAR DESC; */
 
-SELECT country, substring(country FROM 7) AS country_altered
-FROM countries
-GROUP BY country;
+--- Countries with high medal rates
+
+SELECT 
+   upper(LEFT(TRIM(REPLACE(country, '.', '')), 3)) AS country,
+   pop_in_millions,
+   SUM(COALESCE(sg.bronze, 0) + COALESCE(sg.silver, 0)+ COALESCE(sg.gold, 0)) AS medals,
+   SUM(COALESCE(sg.bronze, 0) + COALESCE(sg.silver, 0)+ COALESCE(sg.gold, 0)) / CAST(cs.pop_in_millions AS float) AS medals_per_million
+FROM summer_games AS sg
+INNER JOIN countries c  
+ON
+c.id = sg.country_id
+INNER JOIN country_stats cs
+ON
+sg.country_id = cs.country_id AND sg.YEAR = CAST(cs.YEAR AS date)
+WHERE pop_in_millions IS NOT NULL
+GROUP BY country, cs.pop_in_millions 
+ORDER BY medals_per_million DESC
+LIMIT 25;
 
 
 
