@@ -34,7 +34,9 @@ FROM winter_games wg
 INNER JOIN athletes AS a 
 ON a.id = wg.athlete_id
 LIMIT 20;*/
-----Gold Medals by Demographic Group (Western Europen Regions only)
+
+
+----Viz-1: Gold Medals by Demographic Group (Western Europen Regions only)
 SELECT 'Summer' AS SESSION , CASE WHEN a.age >= 13
 AND a.age <= 25
 AND a.gender = 'M' THEN 'Male Age 13-25'
@@ -82,7 +84,9 @@ WHERE country_id IN(
 GROUP BY demographic_group
 ORDER BY golds DESC;
 
---- Top Athletes in Nobel Prized Countries By Gender
+
+
+--- Viz2 - Top Athletes in Nobel Prized Countries By Gender
 SELECT EVENT AS EVENT, CASE WHEN EVENT LIKE '%Women%' THEN 'Female'
 ELSE 'Male' END AS Gender, count (DISTINCT athlete_id) AS Athletes
 FROM summer_games sg
@@ -112,9 +116,18 @@ WHERE table_name = 'country_stats';
 SELECT YEAR,date_part('decade', CAST(YEAR AS DATE)) AS decade,date_trunc('decade', CAST(YEAR AS DATE)) AS decade_truncated, SUM(gdp) AS world_gdp
 FROM country_stats
 GROUP BY YEAR
-ORDER BY YEAR DESC; */
+ORDER BY YEAR DESC; 
 
---- Countries with high medal rates
+SELECT country, substring(country FROM 7) AS country_altered
+FROM countries
+GROUP BY country; 
+SELECT column_name, data_type
+FROM information_schema.COLUMNS 
+WHERE table_name = 'summer_games'; */
+
+---Viz 3- Countries with high medal rates
+
+
 
 SELECT 
    upper(LEFT(TRIM(REPLACE(country, '.', '')), 3)) AS country,
@@ -133,6 +146,26 @@ GROUP BY country, cs.pop_in_millions
 ORDER BY medals_per_million DESC
 LIMIT 25;
 
+
+
+--- Viz 4- Tallest athlete and % GDP by region 
+SELECT region, avg(height) AS avg_tallest,
+sum(sum(gdp))OVER (PARTITION BY region)/ sum(sum(gdp)) OVER () AS perc_world_gdp
+FROM countries AS c
+INNER JOIN (
+SELECT country_id, height, ROW_NUMBER() OVER (PARTITION BY country_id) AS row_num
+FROM winter_games wg
+INNER JOIN athletes AS a
+ON
+a.id = wg.athlete_id
+GROUP BY country_id, height
+ORDER BY country_id, height DESC ) AS TEMP
+ON
+c.id = temp.country_id
+INNER JOIN country_stats cs 
+ON cs.country_id = c.id
+WHERE row_num = 1
+GROUP BY region;
 
 
 
